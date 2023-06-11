@@ -817,7 +817,6 @@ bool VisualScriptPropertySelector::SearchRunner::_phase_match_classes() {
 			} else {
 				class_doc.inherits = "";
 			}
-			class_doc.category = "VisualScriptCustomNode/" + vsn->get_category();
 			class_doc.brief_description = "";
 			class_doc.constructors.clear();
 			class_doc.methods.clear();
@@ -832,7 +831,7 @@ bool VisualScriptPropertySelector::SearchRunner::_phase_match_classes() {
 		matches[class_doc.name] = ClassMatch();
 		ClassMatch &match = matches[class_doc.name];
 
-		match.category = class_doc.category;
+		match.category = class_doc.inherits;
 		match.doc = &class_doc;
 		// Match class name.
 		if (search_flags & SEARCH_CLASSES || _match_visual_script(class_doc)) {
@@ -1016,21 +1015,21 @@ bool VisualScriptPropertySelector::SearchRunner::_match_string(const String &p_t
 }
 
 bool VisualScriptPropertySelector::SearchRunner::_match_visual_script(DocData::ClassDoc &class_doc) {
-	if (class_doc.category.ends_with("_class")) {
-		if (class_doc.category.begins_with("VisualScript") && search_flags & SEARCH_CLASSES) {
+	if (class_doc.inherits.ends_with("_class")) {
+		if (class_doc.inherits.begins_with("VisualScript") && search_flags & SEARCH_CLASSES) {
 			if (matches.has(class_doc.inherits)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	if (class_doc.category.begins_with("VisualScript") && search_flags & SEARCH_VISUAL_SCRIPT_NODES) {
+	if (class_doc.inherits.begins_with("VisualScript") && search_flags & SEARCH_VISUAL_SCRIPT_NODES) {
 		return true;
 	}
 	if (class_doc.name.begins_with("operators") && search_flags & SEARCH_OPERATORS) {
 		return true;
 	}
-	if (class_doc.category.begins_with("VisualScriptNode/deconstruct")) {
+	if (class_doc.inherits.begins_with("VisualScriptNode/deconstruct")) {
 		if (class_doc.name.find(selector_ui->base_type, 0) > -1) {
 			return true;
 		}
@@ -1040,7 +1039,7 @@ bool VisualScriptPropertySelector::SearchRunner::_match_visual_script(DocData::C
 }
 
 bool VisualScriptPropertySelector::SearchRunner::_match_is_hidden(DocData::ClassDoc &class_doc) {
-	if (class_doc.category.begins_with("VisualScript")) {
+	if (class_doc.inherits.begins_with("VisualScript")) {
 		if (class_doc.name.begins_with("flow_control")) {
 			return false;
 		} else if (class_doc.name.begins_with("operators")) {
@@ -1075,7 +1074,6 @@ void VisualScriptPropertySelector::SearchRunner::_add_class_doc(String class_nam
 	DocData::ClassDoc class_doc = DocData::ClassDoc();
 	class_doc.name = class_name;
 	class_doc.inherits = inherits;
-	class_doc.category = "VisualScriptNode/" + category;
 	class_doc.brief_description = category;
 	combined_docs.insert(class_doc.name, class_doc);
 }
@@ -1122,18 +1120,18 @@ TreeItem *VisualScriptPropertySelector::SearchRunner::_create_class_item(TreeIte
 
 	String what = "Class";
 	String details = p_doc->name;
-	if (p_doc->category.begins_with("VisualScriptCustomNode/")) {
+	if (p_doc->inherits.begins_with("VisualScriptCustomNode/")) {
 		Vector<String> path = p_doc->name.split("/");
 		icon = ui_service->get_theme_icon(SNAME("VisualScript"), SNAME("EditorIcons"));
 		text_0 = path[path.size() - 1];
 		text_1 = "VisualScriptCustomNode";
 		what = "VisualScriptCustomNode";
 		details = "CustomNode";
-	} else if (p_doc->category.begins_with("VisualScriptNode/")) {
+	} else if (p_doc->inherits.begins_with("VisualScriptNode/")) {
 		Vector<String> path = p_doc->name.split("/");
 		icon = ui_service->get_theme_icon(SNAME("VisualScript"), SNAME("EditorIcons"));
 		text_0 = path[path.size() - 1];
-		if (p_doc->category.begins_with("VisualScriptNode/deconstruct")) {
+		if (p_doc->inherits.begins_with("VisualScriptNode/deconstruct")) {
 			text_0 = "deconstruct " + text_0;
 		}
 		text_1 = "VisualScriptNode";

@@ -160,6 +160,10 @@ VisualScriptNodeInstance::~VisualScriptNodeInstance() {
 	}
 }
 
+StringName VisualScript::get_global_name() const {
+	return name;
+}
+
 void VisualScript::add_function(const StringName &p_name, int p_func_node_id) {
 	ERR_FAIL_COND(instances.size());
 	ERR_FAIL_COND(!String(p_name).is_valid_identifier());
@@ -2485,7 +2489,7 @@ VisualScriptLanguage::VisualScriptLanguage() {
 	singleton = this;
 
 	int dmcs = GLOBAL_DEF("debug/settings/visual_script/max_call_stack", 1024);
-	ProjectSettings::get_singleton()->set_custom_property_info("debug/settings/visual_script/max_call_stack", PropertyInfo(Variant::INT, "debug/settings/visual_script/max_call_stack", PROPERTY_HINT_RANGE, "1024,4096,1,or_greater")); //minimum is 1024
+	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::INT, "debug/settings/visual_script/max_call_stack", PROPERTY_HINT_RANGE, "1024,4096,1,or_greater")); //minimum is 1024
 
 	if (EngineDebugger::is_active()) {
 		// Debugging enabled!

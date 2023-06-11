@@ -131,7 +131,7 @@ class VisualScriptEditor : public ScriptEditorBase {
 	EditorProperty *default_property_editor = nullptr;
 	Ref<VisualScriptEditedProperty> edited_default_property_holder;
 
-	Ref<EditorUndoRedoManager> undo_redo;
+	EditorUndoRedoManager *undo_redo;
 	Tree *members = nullptr;
 	AcceptDialog *function_name_edit = nullptr;
 	LineEdit *function_name_box = nullptr;
@@ -291,11 +291,11 @@ class VisualScriptEditor : public ScriptEditorBase {
 	void _on_nodes_delete();
 	void _on_nodes_duplicate();
 
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data,
-			Control *p_from) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data,
-			Control *p_from);
+	Variant get_drag_data_fw(const Point2 &p_point); //, Control *p_from);
+	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data); //,
+//			Control *p_from) const;
+	void drop_data_fw(const Point2 &p_point, const Variant &p_data); //,
+//			Control *p_from);
 
 	int editing_id = 0;
 	int editing_input = 0;
@@ -355,8 +355,9 @@ public:
 	virtual void clear_executing_line() override;
 	virtual void trim_trailing_whitespace() override;
 	virtual void insert_final_newline() override;
-	virtual void convert_indent_to_spaces() override;
-	virtual void convert_indent_to_tabs() override;
+	virtual void convert_indent() override;
+	virtual void convert_indent_to_spaces();
+	virtual void convert_indent_to_tabs();
 	virtual void ensure_focus() override;
 	virtual void tag_saved_version() override;
 	virtual void reload(bool p_soft) override;

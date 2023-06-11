@@ -167,6 +167,8 @@ class VisualScript : public Script {
 
 	RES_BASE_EXTENSION("vs");
 
+	String name;
+
 public:
 	struct SequenceConnection {
 		union {
@@ -263,6 +265,8 @@ public:
 
 	void set_scroll(const Vector2 &p_scroll);
 	Vector2 get_scroll() const;
+
+	virtual StringName get_global_name() const override;
 
 	void add_function(const StringName &p_name, int p_func_node_id);
 	bool has_function(const StringName &p_name) const;
@@ -564,7 +568,7 @@ public:
 	virtual void init() override;
 	virtual String get_type() const override;
 	virtual String get_extension() const override;
-	virtual Error execute_file(const String &p_path) override;
+	virtual Error execute_file(const String &p_path);
 	virtual void finish() override;
 
 	/* EDITOR FUNCTIONS */

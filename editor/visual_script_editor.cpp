@@ -48,6 +48,7 @@
 #include "scene/gui/graph_edit.h"
 #include "scene/gui/separator.h"
 #include "scene/gui/view_panner.h"
+#include "scene/gui/texture_rect.h"
 #include "editor/inspector_dock.h"
 #include "scene/main/window.h"
 
@@ -76,7 +77,7 @@ class VisualScriptEditorSignalEdit : public Object {
 	StringName sig;
 
 public:
-	Ref<EditorUndoRedoManager> undo_redo;
+	EditorUndoRedoManager *undo_redo;
 	Ref<VisualScript> script;
 
 protected:
@@ -207,7 +208,7 @@ class VisualScriptEditorVariableEdit : public Object {
 	StringName var;
 
 public:
-	Ref<EditorUndoRedoManager> undo_redo;
+	EditorUndoRedoManager *undo_redo;
 	Ref<VisualScript> script;
 
 protected:
@@ -2007,9 +2008,9 @@ void VisualScriptEditor::_on_nodes_duplicate() {
 		}
 	}
 
-	List<VisualScript::DataConnection> data;
-	script->get_data_connection_list(&data);
-	for (const VisualScript::DataConnection &E : data) {
+	List<VisualScript::DataConnection> conn;
+	script->get_data_connection_list(&conn);
+	for (const VisualScript::DataConnection &E : conn) {
 		if (to_duplicate.has(E.from_node) && to_duplicate.has(E.to_node)) {
 			undo_redo->add_do_method(script.ptr(), "data_connect", remap[E.from_node], E.from_port, remap[E.to_node], E.to_port);
 		}
@@ -2057,7 +2058,7 @@ void VisualScriptEditor::input(const Ref<InputEvent> &p_event) {
 void VisualScriptEditor::_graph_gui_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEventMouseButton> key = p_event;
 
-	if (key.is_valid() && key->is_pressed() && key->get_button_mask() == MouseButton::RIGHT) {
+	if (key.is_valid() && key->is_pressed() && key->get_button_mask().has_flag(MouseButtonMask::RIGHT)) {
 		bool is_empty_selection = true;
 
 		for (int i = 0; i < graph->get_child_count(); i++) {
@@ -2183,8 +2184,8 @@ void VisualScriptEditor::_on_fn_name_box_confirmed() {
 	_rename_function(selected, function_name_box->get_text());
 }
 
-Variant VisualScriptEditor::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
-	if (p_from == members) {
+Variant VisualScriptEditor::get_drag_data_fw(const Point2 &p_point) { //, Control *p_from) {
+	//if (p_from == members) {
 		TreeItem *it = members->get_item_at_position(p_point);
 		if (!it) {
 			return Variant();
@@ -2217,12 +2218,12 @@ Variant VisualScriptEditor::get_drag_data_fw(const Point2 &p_point, Control *p_f
 		label->set_text(it->get_text(0));
 		set_drag_preview(label);
 		return dd;
-	}
-	return Variant();
+	//}
+	//return Variant();
 }
 
-bool VisualScriptEditor::can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const {
-	if (p_from == graph) {
+bool VisualScriptEditor::can_drop_data_fw(const Point2 &p_point, const Variant &p_data) { //, Control *p_from) const {
+	//if (p_from == graph) {
 		Dictionary d = p_data;
 		if (d.has("type") &&
 				(String(d["type"]) == "visual_script_node_drag" ||
@@ -2259,7 +2260,7 @@ bool VisualScriptEditor::can_drop_data_fw(const Point2 &p_point, const Variant &
 
 			return true;
 		}
-	}
+	//}
 
 	return false;
 }
@@ -2285,10 +2286,10 @@ static Node *_find_script_node(Node *p_edited_scene, Node *p_current_node, const
 	return nullptr;
 }
 
-void VisualScriptEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) {
-	if (p_from != graph) {
-		return;
-	}
+void VisualScriptEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data) {//, Control *p_from) {
+//	if (p_from != graph) {
+//		return;
+//	}
 
 	Dictionary d = p_data;
 
@@ -2832,6 +2833,9 @@ void VisualScriptEditor::trim_trailing_whitespace() {
 }
 
 void VisualScriptEditor::insert_final_newline() {
+}
+
+void VisualScriptEditor::convert_indent() {
 }
 
 void VisualScriptEditor::convert_indent_to_spaces() {
@@ -3755,9 +3759,9 @@ void VisualScriptEditor::_selected_connect_node(const String &p_text, const Stri
 		}
 
 		if (drop_node) {
-			Ref<Script> script = drop_node->get_script();
-			if (script != nullptr) {
-				base_script = script->get_path();
+			Ref<Script> dropped_script = drop_node->get_script();
+			if (dropped_script != nullptr) {
+				base_script = dropped_script->get_path();
 			}
 		}
 
@@ -4653,7 +4657,10 @@ VisualScriptEditor::VisualScriptEditor() {
 	members->set_allow_rmb_select(true);
 	members->set_allow_reselect(true);
 	members->set_hide_folding(true);
-	members->set_drag_forwarding(this);
+	members->set_drag_forwarding(
+		callable_mp(this, &VisualScriptEditor::get_drag_data_fw),
+		callable_mp(this, &VisualScriptEditor::can_drop_data_fw),
+		callable_mp(this, &VisualScriptEditor::drop_data_fw));
 
 	member_popup = memnew(PopupMenu);
 	add_child(member_popup);
@@ -4683,7 +4690,11 @@ VisualScriptEditor::VisualScriptEditor() {
 	graph->connect("delete_nodes_request", callable_mp(this, &VisualScriptEditor::_on_nodes_delete));
 	graph->connect("duplicate_nodes_request", callable_mp(this, &VisualScriptEditor::_on_nodes_duplicate));
 	graph->connect("gui_input", callable_mp(this, &VisualScriptEditor::_graph_gui_input));
-	graph->set_drag_forwarding(this);
+	graph->set_drag_forwarding(
+		callable_mp(this, &VisualScriptEditor::get_drag_data_fw),
+		callable_mp(this, &VisualScriptEditor::can_drop_data_fw),
+		callable_mp(this, &VisualScriptEditor::drop_data_fw)
+	);
 	float graph_minimap_opacity = EditorSettings::get_singleton()->get("editors/visual_editors/minimap_opacity");
 	graph->set_minimap_opacity(graph_minimap_opacity);
 	float graph_lines_curvature = EditorSettings::get_singleton()->get("editors/visual_editors/lines_curvature");
@@ -4830,7 +4841,7 @@ VisualScriptEditor::VisualScriptEditor() {
 	select_base_type->connect("create", callable_mp(this, &VisualScriptEditor::_change_base_type_callback));
 	add_child(select_base_type);
 
-	undo_redo = EditorNode::get_singleton()->get_undo_redo();
+	undo_redo = EditorUndoRedoManager::get_singleton();
 
 	set_process_input(true);
 
